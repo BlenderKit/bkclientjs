@@ -1,0 +1,24 @@
+{
+  "name": "bkclient",
+  "version": "1.0.0",
+  "description": "JavaScript library for communication between website and local BlenderKit-Client instance.",
+  "main": "dist/main.js",
+  "types": "dist/main.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/blenderkit/bkclient.git"
+  },
+  "author": "BlenderKit, Andreas Gajdosik",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/blenderkit/bkclient/issues"
+  },
+  "homepage": "https://github.com/blenderkit/bkclient#readme",
+  "dependencies": {
+    "typescript": "^5.4.5"
+  }
+}
