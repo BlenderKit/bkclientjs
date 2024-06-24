@@ -8,6 +8,15 @@
     <link rel="stylesheet" href="style.css">
   </head>
   <body>
+    <input type="text" id="asset-base-id" placeholder="Asset Base ID" value="67f55944-a088-48de-8a60-6132547cbf75">
+    <button id="download" onclick="DownloadButtonClicked()">Download</button>
+  <script> 
+    function DownloadButtonClicked() {
+        let assetBaseID = document.getElementById("asset-base-id");
+        let assetBaseIDValue = assetBaseID.value;
+        Download(assetBaseIDValue, "blender-4.1");
+    }
+  </script>
 	<script src="./dist/main.js"></script>
   </body>
 </html>
