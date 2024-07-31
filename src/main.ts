@@ -36,12 +36,16 @@ async function TryClientStatus(url: string): Promise<Response|null> {
     return null;
 }
 
-async function Download (assetBaseID: string, target: string): Promise<boolean> {
-    const url = `http://localhost:${activePort}/bkclientjs/download`;
+async function Download (assetID: string, assetBaseID: string, resolution: string, apiKey: string, appID: number): Promise<boolean> {
+    const url = `http://localhost:${activePort}/bkclientjs/get_asset`;
     const data = JSON.stringify({
+        "api_key": apiKey,
+        "asset_id": assetID,
         "asset_base_id": assetBaseID,
-        "target": target,
+        "resolution": resolution,
+        "app_id": Number(appID),
     });
+
     try {
         const resp = await fetch(url, {
             method: "POST",
@@ -61,15 +65,31 @@ async function Download (assetBaseID: string, target: string): Promise<boolean> 
     return false;
 }
 
+interface Software {
+    name: string; // Blender/Godot/etc.
+    version: string; // Version of the software, e.g. 4.2.1
+    appID: number; // PID aka Process ID
+    addonVersion: string; // Version of the add-on, e.g. 3.12.2
+}
+
+interface ClientStatus {
+    clientVersion: string; // 1.2.1
+    softwares: Software[]; // List of connected softwares with communicating add-ons
+}
 
 async function OnLoad() {
     const resp = await GetClientStatus();
-    console.log(resp);
     if (resp === null) {
         return;
     }
 
-    const test = await resp.text();
-    console.log("client status:", test);
+    const data = await resp.text();
+    let jsonObj = JSON.parse(data);
 
+    let clientStatus = jsonObj as ClientStatus;
+    console.log("Client version:", clientStatus.clientVersion);
+    
+    for(let i=0; i<clientStatus.softwares.length; i++){
+        console.log(clientStatus.softwares[i]);
+    };
 }
