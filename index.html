@@ -44,6 +44,9 @@
         let resolution = document.getElementById("resolution");
         Download(assetID.value, assetBaseID.value, resolution.value, apiKey.value, appID.value);
     }
+    window.onload = function() {
+      bkclient.OnLoad();
+      };
   </script>
 	<script src="./dist/main.js"></script>
   </body>
