@@ -3,16 +3,27 @@ export { downloadAssetToSoftware, getRunningClients, onLoad };
 /** As defined in CLIENT_PORTS in https://github.com/BlenderKit/BlenderKit/blob/main/global_vars.py */
 let CLIENT_PORTS = ["65425", "55428", "49452", "35452", "25152", "5152", "1234", "62485"];
 
+
+/** Holds all the data reported by Client about it status and currently connected softwares.
+ * @property {string} clientVersion - version of the Client, e.g. 1.2.1 
+ * @property {Software[]} softwares - array of connected softwares (with appropriate add-ons installed)
+ */
 interface ClientStatus {
-    clientVersion: string; // e.g. 1.2.1
+    clientVersion: string; //
     softwares: Software[]; // List of connected softwares with communicating add-ons
 }
 
+/** Holds the data about Software with apropriate add-on connected to Client.
+ * @property {string} name - Blender/Godot/etc.
+ * @property {string} version - Version of the software, e.g.: 4.2.1
+ * @property {string} appID - PID aka Process ID of the software
+ * @property {string} addonVersion - Version of the add-on installed in the Software, e.g.: 3.12.3
+ */
 interface Software {
-    name: string; // Blender/Godot/etc.
-    version: string; // Version of the software, e.g. 4.2.1
-    appID: number; // PID aka Process ID
-    addonVersion: string; // Version of the add-on, e.g. 3.12.2
+    name: string;
+    version: string;
+    appID: number;
+    addonVersion: string;
 }
 
 async function clientIsOnline(): Promise<boolean> {
@@ -27,7 +38,9 @@ async function clientIsOnline(): Promise<boolean> {
 async function getRunningClients(): Promise<ClientStatus[]> {
     let statuses: ClientStatus[] = []
     for (const port of CLIENT_PORTS) {
-        const clientStatus = await _tryClientStatus(`http://localhost:${port}/bkclientjs/status`)
+        /** Defined in bkclientjsStatusHandler in https://github.com/BlenderKit/BlenderKit/blob/main/client/main.go. */
+        const url: string = `http://localhost:${port}/bkclientjs/status`;
+        const clientStatus = await _tryClientStatus(url)
         if (clientStatus === null) {
             continue
         }
@@ -73,7 +86,7 @@ async function _tryClientStatus(url: string): Promise<ClientStatus|null> {
  * @returns true if download was successfully scheduled, otherwise false.
  */
 async function downloadAssetToSoftware (clientPort: string, assetID: string, assetBaseID: string, resolution: string, apiKey: string, appID: number): Promise<boolean> {
-    /** Defined in bkclientjsStatusHandler in https://github.com/BlenderKit/BlenderKit/blob/main/client/main.go. */
+    /** Defined in bkclientjsGetAssetHandler in https://github.com/BlenderKit/BlenderKit/blob/main/client/main.go. */
     const url = `http://localhost:${clientPort}/bkclientjs/get_asset`;
     const data = JSON.stringify({
         "api_key": apiKey,
