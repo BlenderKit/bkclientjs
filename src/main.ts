@@ -5,12 +5,14 @@ let CLIENT_PORTS = ["65425", "55428", "49452", "35452", "25152", "5152", "1234",
 
 
 /** Holds all the data reported by Client about it status and currently connected softwares.
- * @property {string} clientVersion - version of the Client, e.g. 1.2.1 
+ * @property {string} clientVersion - version of the Client, e.g. 1.2.1
+ * @property {string} port - port on which the Client runs, later used to select through which Client we want to download
  * @property {Software[]} softwares - array of connected softwares (with appropriate add-ons installed)
  */
 interface ClientStatus {
-    clientVersion: string; //
-    softwares: Software[]; // List of connected softwares with communicating add-ons
+    clientVersion: string;
+    port: string;
+    softwares: Software[];
 }
 
 /** Holds the data about Software with apropriate add-on connected to Client.
@@ -40,10 +42,11 @@ async function getRunningClients(): Promise<ClientStatus[]> {
     for (const port of CLIENT_PORTS) {
         /** Defined in bkclientjsStatusHandler in https://github.com/BlenderKit/BlenderKit/blob/main/client/main.go. */
         const url: string = `http://localhost:${port}/bkclientjs/status`;
-        const clientStatus = await _tryClientStatus(url)
+        let clientStatus = await _tryClientStatus(url)
         if (clientStatus === null) {
             continue
         }
+        clientStatus.port = port;
         statuses.push(clientStatus);
     }
     return statuses;
