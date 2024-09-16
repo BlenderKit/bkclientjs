@@ -8,46 +8,152 @@
     <link rel="stylesheet" href="style.css">
   </head>
   <body>
-    <h1>Download from browser PoC</h1>
+    <h1>Download from browser PoC</h1>    
+    <div>
+      Softwares
+      <select id="software">
+        <option value="" disabled selected>Select Software</option>
+      </select>
+      (dynamically detected, make sure at least 1 client is running)
+    </div>
+    
     <div>
       APIKey
       <input type="text" id="api-key" placeholder="API Key" value="">
       (this will fill in the webpage, because user is logged-in)
     </div>
+    
     <div>
       AppID
       <input type="text" id="app-id" placeholder="App ID" value="">
       (user will choose from list of connected softwares, this is target PID to which we will download)
     </div>
+    
     <div>
       AssetID
       <input type="text" id="asset-id" placeholder="Asset ID" value="0992088b-fb84-4c69-bb6e-426272970c8b">
       (this will fill the webpage, we know on which asset user clicks the download)
     </div>
+    
     <div>
       Asset Base ID
       <input type="text" id="asset-base-id" placeholder="Asset Base ID" value="67f55944-a088-48de-8a60-6132547cbf75">
       (this will fill the webpage, we know on which asset user clicks the download)
     </div>
+    
     <div>
       Resolution
       <input type="text" id="resolution" placeholder="Resolution" value="resolution_4K">
       (user will choose)
     </div>
+    
     <button id="download" onclick="DownloadButtonClicked()">Download</button>
-  <script> 
-    function DownloadButtonClicked() {
-        let apiKey = document.getElementById("api-key");
-        let appID = document.getElementById("app-id");
-        let assetID = document.getElementById("asset-id");
-        let assetBaseID = document.getElementById("asset-base-id");
-        let resolution = document.getElementById("resolution");
-        Download(assetID.value, assetBaseID.value, resolution.value, apiKey.value, appID.value);
-    }
-    window.onload = function() {
-      bkclient.onLoad();
+
+    <div>
+      <h2>Clients</h2>
+      <ul id="client-list">
+        <!-- List of connected clients will be populated here -->
+      </ul>
+    </div>
+
+    <script>
+      let clients = [];
+      const pollingInterval = 500;
+
+      // Function to populate the client list with available clients
+      async function populateClientList() {
+        clients = await bkclientjs.getClients();
+        const clientList = document.getElementById("client-list");
+
+        // Clear the existing client list
+        clientList.innerHTML = '';
+
+        if (!clients || clients.length === 0) {
+          console.log("No Clients running.");
+          return;
+        }
+
+        // Populate the list with connected clients
+        clients.forEach(client => {
+          const listItem = document.createElement("li");
+          listItem.textContent = `Client on port ${client.port} (version: ${client.clientVersion})`;
+          clientList.appendChild(listItem);
+        });
+
+        // Update the software dropdown with the latest software
+        populateSoftwareDropdown();
+      }
+
+      let isDropdownFocused = false; // Flag to track if the dropdown is focused
+
+      // Function to populate the software dropdown with available software
+      async function populateSoftwareDropdown() {
+        if (isDropdownFocused) {
+          // Don't update the dropdown if the user is interacting with it
+          return;
+        }
+
+        const softwareSelect = document.getElementById("software");
+
+        // Save the currently selected value
+        const selectedValue = softwareSelect.value;
+
+        // Clear existing options (keep the placeholder)
+        softwareSelect.innerHTML = '<option value="" disabled selected>Select Software</option>';
+
+        const softwares = await bkclientjs.getSoftwares();
+
+        if (!softwares || softwares.length === 0) {
+          console.log("No Software running.");
+          return;
+        }
+
+        softwares.forEach(software => {
+          const option = document.createElement("option");
+          option.value = software.appID;
+          option.textContent = `${software.name} (v${software.version})`;
+          softwareSelect.appendChild(option);
+        });
+
+        // Restore the previously selected value if it exists
+        if (selectedValue) {
+          softwareSelect.value = selectedValue;
+        }
+      }
+
+      // Add event listeners to pause and resume dropdown updates
+      document.getElementById("software").addEventListener("focus", () => {
+        isDropdownFocused = true;
+      });
+
+      document.getElementById("software").addEventListener("blur", () => {
+        isDropdownFocused = false;
+      });
+
+      // Function to handle the download button click
+      function DownloadButtonClicked() {
+        const apiKey = document.getElementById("api-key").value;
+        const appID = document.getElementById("app-id").value;
+        const assetID = document.getElementById("asset-id").value;
+        const assetBaseID = document.getElementById("asset-base-id").value;
+        const resolution = document.getElementById("resolution").value;
+
+        if (!apiKey || !appID || !assetID || !assetBaseID || !resolution) {
+          alert("Please fill all required fields.");
+          return;
+        }
+
+        bkclientjs.downloadAssetToSoftware(apiKey, assetID, assetBaseID, resolution, appID);
+      }
+
+      // Start polling and updating the clients and software lists periodically
+      window.onload = function() {
+        bkclientjs.startClientPolling(500);
+        populateClientList(); // Initial population
+        setInterval(populateClientList, pollingInterval); // Periodic polling
       };
-  </script>
-	<script src="./dist/main.js"></script>
+    </script>
+
+    <script src="./dist/main.js"></script>
   </body>
 </html>

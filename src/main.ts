@@ -1,8 +1,9 @@
-export { downloadAssetToSoftware, getRunningClients, onLoad };
+export { downloadAssetToSoftware, getClientsNow, getClients, getSoftwares, startClientPolling, stopClientPolling };
 
 /** As defined in CLIENT_PORTS in https://github.com/BlenderKit/BlenderKit/blob/main/global_vars.py */
 let CLIENT_PORTS = ["65425", "55428", "49452", "35452", "25152", "5152", "1234", "62485"];
-
+let pollingInterval: ReturnType<typeof setInterval> | undefined; 
+let connectedClients: ClientStatus[];
 
 /** Holds all the data reported by Client about it status and currently connected softwares.
  * @property {string} clientVersion - version of the Client, e.g. 1.2.1
@@ -20,24 +21,21 @@ interface ClientStatus {
  * @property {string} version - Version of the software, e.g.: 4.2.1
  * @property {string} appID - PID aka Process ID of the software
  * @property {string} addonVersion - Version of the add-on installed in the Software, e.g.: 3.12.3
+ * @property {string} clientPort - port of the Client to which Software is connected
  */
 interface Software {
     name: string;
     version: string;
     appID: number;
     addonVersion: string;
+    clientPort: string;
 }
 
-async function clientIsOnline(): Promise<boolean> {
-    const resp = await getRunningClients();
-    return resp!== null;
-}
-
-/** Iterate over all possible ports Client can have on the localhost and get their ClientStatuses if possible.
- * Use the statuses to update UI and inform user where they can download the asset from browser gallery.
+/** Scan for the Clients right now. Make requests iterating over all possible ports Client can have on the localhost
+ * and get their ClientStatuses if possible. Use the statuses to update UI and inform user where they can download the asset from browser gallery.
  * @returns first successful response from local Client or null if something went wrong.
  */
-async function getRunningClients(): Promise<ClientStatus[]> {
+async function getClientsNow(): Promise<ClientStatus[]> {
     let statuses: ClientStatus[] = []
     for (const port of CLIENT_PORTS) {
         /** Defined in bkclientjsStatusHandler in https://github.com/BlenderKit/BlenderKit/blob/main/client/main.go. */
@@ -118,16 +116,53 @@ async function downloadAssetToSoftware (clientPort: string, assetID: string, ass
     return false;
 }
 
-async function onLoad() {
-    const clientStatuses = await getRunningClients();
-    if (clientStatuses === null) {
+/** Get the clients saved in connectedClients variable.
+ * Variable is updated periodically if the startClientPolling was called before.
+ * @returns array of connected clients.
+ */
+async function getClients(): Promise<ClientStatus[]> {
+    return connectedClients;
+}
+
+/** Get all available softwares from all conected Clients.
+ * This array is what the user cares of - software to which they can download.
+ * @returns array of connected Softwares.
+ */
+async function getSoftwares(): Promise<Software[]> {
+    let connectedSoftwares: Software[] = [];
+    for (var client of connectedClients ) {
+        for (var software of client.softwares) {
+            connectedSoftwares.push(software)
+        }
+    }
+    return connectedSoftwares
+}
+
+// MARK: POLLING
+
+async function startClientPolling(interval: number) {
+    if (pollingInterval) {
+        console.log("Polling is already running");
         return;
     }
-    console.log("Clients available:", clientStatuses)
-    for(let i=0; i<clientStatuses.length; i++) {
-        console.log(`${i}. Client (version=${clientStatuses[i].clientVersion})`);   
-        for(let x=0; x<clientStatuses[i].softwares.length; x++){
-            console.log(`- ${x}. Software: ${clientStatuses[i].softwares[x]}`);
-        };
-    };
+    pollingInterval = setInterval(async () => {
+        try {
+            connectedClients = await getClientsNow();
+            console.log("Updated clients:", connectedClients);
+        } catch (error) {
+            console.error("Error while fetching clients:", error);
+        }
+    }, interval);
+    console.log(`Polling started with interval: ${interval}ms`);
+}
+
+
+function stopClientPolling() {
+    if (!pollingInterval) {
+        console.log("No polling is running.");
+        return;
+    }
+    clearInterval(pollingInterval);
+    pollingInterval = undefined;
+    console.log("Polling stopped.");    
 }
