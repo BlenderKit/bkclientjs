@@ -18,17 +18,20 @@
     </div>
     
     <div>
+      Software AppID = <span id="app-id"></span>
+    </div>
+    <div>
+      Client Port = <span id="port"></span>
+    </div>
+
+    </br>
+
+    <div>
       APIKey
       <input type="text" id="api-key" placeholder="API Key" value="">
       (this will fill in the webpage, because user is logged-in)
     </div>
-    
-    <div>
-      AppID
-      <input type="text" id="app-id" placeholder="App ID" value="">
-      (user will choose from list of connected softwares, this is target PID to which we will download)
-    </div>
-    
+        
     <div>
       AssetID
       <input type="text" id="asset-id" placeholder="Asset ID" value="0992088b-fb84-4c69-bb6e-426272970c8b">
@@ -59,100 +62,124 @@
     <script>
       let clients = [];
       const pollingInterval = 500;
-
+    
       // Function to populate the client list with available clients
       async function populateClientList() {
         clients = await bkclientjs.getClients();
         const clientList = document.getElementById("client-list");
-
+    
         // Clear the existing client list
         clientList.innerHTML = '';
-
+    
         if (!clients || clients.length === 0) {
           console.log("No Clients running.");
           return;
         }
-
+    
         // Populate the list with connected clients
         clients.forEach(client => {
           const listItem = document.createElement("li");
           listItem.textContent = `Client on port ${client.port} (version: ${client.clientVersion})`;
           clientList.appendChild(listItem);
         });
-
+    
         // Update the software dropdown with the latest software
         populateSoftwareDropdown();
       }
-
+    
       let isDropdownFocused = false; // Flag to track if the dropdown is focused
-
+    
       // Function to populate the software dropdown with available software
       async function populateSoftwareDropdown() {
         if (isDropdownFocused) {
           // Don't update the dropdown if the user is interacting with it
           return;
         }
-
+    
         const softwareSelect = document.getElementById("software");
-
+    
         // Save the currently selected value
         const selectedValue = softwareSelect.value;
-
+    
         // Clear existing options (keep the placeholder)
         softwareSelect.innerHTML = '<option value="" disabled selected>Select Software</option>';
-
+    
         const softwares = await bkclientjs.getSoftwares();
-
+    
         if (!softwares || softwares.length === 0) {
           console.log("No Software running.");
           return;
         }
-
+    
         softwares.forEach(software => {
           const option = document.createElement("option");
-          option.value = software.appID;
+          option.value = software.appID; // Use the appID as the value
           option.textContent = `${software.name} (v${software.version})`;
           softwareSelect.appendChild(option);
         });
-
+    
         // Restore the previously selected value if it exists
         if (selectedValue) {
           softwareSelect.value = selectedValue;
         }
       }
-
+    
+      // Event listener for when a software is selected
+      document.getElementById("software").addEventListener("change", function() {
+        const selectedAppID = this.value; // Get the selected appID
+    
+        // Find the client and port associated with the selected software
+        let selectedPort = "";
+        for (let client of clients) {
+          for (let software of client.softwares) {
+            if (software.appID == selectedAppID) {
+              selectedPort = client.port;
+              break;
+            }
+          }
+          if (selectedPort) break;
+        }
+    
+        // Update the AppID and Port spans
+        document.getElementById("app-id").textContent = selectedAppID; // Update the AppID span
+        document.getElementById("port").textContent = selectedPort; // Update the Port span
+      });
+    
       // Add event listeners to pause and resume dropdown updates
       document.getElementById("software").addEventListener("focus", () => {
         isDropdownFocused = true;
       });
-
+    
       document.getElementById("software").addEventListener("blur", () => {
         isDropdownFocused = false;
       });
-
+    
       // Function to handle the download button click
-      function DownloadButtonClicked() {
+      async function DownloadButtonClicked() {
         const apiKey = document.getElementById("api-key").value;
-        const appID = document.getElementById("app-id").value;
+        const appID = document.getElementById("app-id").textContent;
+        const port = document.getElementById("port").textContent;
         const assetID = document.getElementById("asset-id").value;
         const assetBaseID = document.getElementById("asset-base-id").value;
         const resolution = document.getElementById("resolution").value;
-
-        if (!apiKey || !appID || !assetID || !assetBaseID || !resolution) {
+    
+        if (!apiKey || !appID || !assetID || !assetBaseID || !resolution || !port) {
           alert("Please fill all required fields.");
           return;
         }
-
-        bkclientjs.downloadAssetToSoftware(apiKey, assetID, assetBaseID, resolution, appID);
+    
+        let ok = await bkclientjs.downloadAssetToSoftware(port, appID, assetID, assetBaseID, resolution, apiKey, );
+        console.log("Download ok:", ok)
       }
-
+    
       // Start polling and updating the clients and software lists periodically
       window.onload = function() {
-        bkclientjs.startClientPolling(500);
+        bkclientjs.startClientPolling(5000);
         populateClientList(); // Initial population
         setInterval(populateClientList, pollingInterval); // Periodic polling
       };
     </script>
+    
 
     <script src="./dist/main.js"></script>
   </body>

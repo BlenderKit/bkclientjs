@@ -26,12 +26,25 @@ For Godot and other softwares we might just download the asset into specified di
 
 ### Example:
 
+If you want to get the Clients on demand right now:
 ```javascript
-let client = bkclientjs.getRunningClients()
+let client = await bkclientjs.getClientsNow()
 if (client.length === 0) {
     return
 }
 const ok = bkclientjs.downloadAssetToSoftware(client.port, assetID, assetBaseID, resolution, apiKey, client.software[0].appID)
+```
+
+Or you can start a polling and then get the Clients from variable filled by the polling:
+```javascript
+bkclientjs.startClientPolling(500); // library will check for the Clients every 500ms
+
+// later - ideally in your own Timeout update function
+// results are available without need for await via:
+let clients = bkclientjs.getClients()
+
+// or you can get the list of all software - this is what cares of:
+let softwares = bkclientjs.getSoftwares()
 ```
 
 ## Developing

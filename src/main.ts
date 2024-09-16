@@ -86,7 +86,7 @@ async function _tryClientStatus(url: string): Promise<ClientStatus|null> {
  * @param appID - Process ID of the running software to which we will download - list of all softwares is part of the 
  * @returns true if download was successfully scheduled, otherwise false.
  */
-async function downloadAssetToSoftware (clientPort: string, assetID: string, assetBaseID: string, resolution: string, apiKey: string, appID: number): Promise<boolean> {
+async function downloadAssetToSoftware (clientPort: string, appID: number, assetID: string, assetBaseID: string, resolution: string, apiKey: string): Promise<boolean> {
     /** Defined in bkclientjsGetAssetHandler in https://github.com/BlenderKit/BlenderKit/blob/main/client/main.go. */
     const url = `http://localhost:${clientPort}/bkclientjs/get_asset`;
     const data = JSON.stringify({
@@ -116,11 +116,13 @@ async function downloadAssetToSoftware (clientPort: string, assetID: string, ass
     return false;
 }
 
+// MARK: GET FUNCTIONS
+
 /** Get the clients saved in connectedClients variable.
  * Variable is updated periodically if the startClientPolling was called before.
  * @returns array of connected clients.
  */
-async function getClients(): Promise<ClientStatus[]> {
+function getClients(): ClientStatus[] {
     return connectedClients;
 }
 
@@ -128,7 +130,7 @@ async function getClients(): Promise<ClientStatus[]> {
  * This array is what the user cares of - software to which they can download.
  * @returns array of connected Softwares.
  */
-async function getSoftwares(): Promise<Software[]> {
+function getSoftwares(): Software[] {
     let connectedSoftwares: Software[] = [];
     for (var client of connectedClients ) {
         for (var software of client.softwares) {
