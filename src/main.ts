@@ -1,13 +1,10 @@
-export { DownloadAssetToSoftware, GetClientStatus, OnLoad };
+export { DownloadAssetToSoftware, GetClientStatuses, OnLoad };
 
 let CLIENT_PORTS = ["65425", "55428", "49452", "35452", "25152", "5152", "1234", "62485"];
-/** TODO: We should handle if more Clients run at the same tim. */
-let activePort = "";
-let socket: WebSocket | null = null;
 
 
 async function ClientIsOnline(): Promise<boolean> {
-    const resp = await GetClientStatus();
+    const resp = await GetClientStatuses();
     return resp!== null;
 }
 
@@ -15,15 +12,16 @@ async function ClientIsOnline(): Promise<boolean> {
  * 
  * @returns first successful response from local Client or null if something went wrong.
  */
-async function GetClientStatus(): Promise<Response|null> {
+async function GetClientStatuses(): Promise<ClientStatus[]> {
+    let statuses: ClientStatus[] = []
     for (const port of CLIENT_PORTS) {
-        const resp = await TryClientStatus(`http://localhost:${port}/bkclientjs/status`)
-        if (resp!== null) {
-            activePort = port;
-            return resp;
+        const clientStatus = await TryClientStatus(`http://localhost:${port}/bkclientjs/status`)
+        if (clientStatus === null) {
+            continue
         }
+        statuses.push(clientStatus);
     }
-    return null;
+    return statuses;
 }
 
 /**
@@ -31,14 +29,16 @@ async function GetClientStatus(): Promise<Response|null> {
  * @param url Address where to check if Client replies
  * @returns response of the Client or null if something went wrong
  */
-async function TryClientStatus(url: string): Promise<Response|null> {
+async function TryClientStatus(url: string): Promise<ClientStatus|null> {
     try {
         const resp = await fetch(url);
         if (resp.status === 200) {
-            return resp
+            console.log("Client response:", resp)
+            let clientStatus = await resp.json() as ClientStatus;
+
+            return clientStatus
         }
         console.log(`Bad status code: ${resp.status}`);
-
     } catch (err) {
         console.error(err);
     }
@@ -53,6 +53,7 @@ async function TryClientStatus(url: string): Promise<Response|null> {
 */
 
 /** Schedule download of an Asset to specified Software.
+ * @param clientPort - port on which the Client is running (there can be multiple Clients in rare cases)
  * @param assetID - which asset to download
  * @param assetBaseID - which asset to download TODO: remove this or assetBaseID and require just one
  * @param resolution - resolution of the asset - user should probably select this in the gallery
@@ -60,8 +61,8 @@ async function TryClientStatus(url: string): Promise<Response|null> {
  * @param appID - Process ID of the running software to which we will download - list of all softwares is part of the 
  * @returns 
  */
-async function DownloadAssetToSoftware (assetID: string, assetBaseID: string, resolution: string, apiKey: string, appID: number): Promise<boolean> {
-    const url = `http://localhost:${activePort}/bkclientjs/get_asset`;
+async function DownloadAssetToSoftware (clientPort: string, assetID: string, assetBaseID: string, resolution: string, apiKey: string, appID: number): Promise<boolean> {
+    const url = `http://localhost:${clientPort}/bkclientjs/get_asset`;
     const data = JSON.stringify({
         "api_key": apiKey,
         "asset_id": assetID,
@@ -102,18 +103,15 @@ interface ClientStatus {
 }
 
 async function OnLoad() {
-    const resp = await GetClientStatus();
-    if (resp === null) {
+    const clientStatuses = await GetClientStatuses();
+    if (clientStatuses === null) {
         return;
     }
-
-    const data = await resp.text();
-    let jsonObj = JSON.parse(data);
-
-    let clientStatus = jsonObj as ClientStatus;
-    console.log("Client version:", clientStatus.clientVersion);
-    
-    for(let i=0; i<clientStatus.softwares.length; i++){
-        console.log(clientStatus.softwares[i]);
+    console.log("Clients available:", clientStatuses)
+    for(let i=0; i<clientStatuses.length; i++) {
+        console.log(`${i}. Client (version=${clientStatuses[i].clientVersion})`);   
+        for(let x=0; x<clientStatuses[i].softwares.length; x++){
+            console.log(`- ${x}. Software: ${clientStatuses[i].softwares[x]}`);
+        };
     };
 }
