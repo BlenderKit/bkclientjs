@@ -6,7 +6,7 @@ const config: Configuration = {
   output: {
     filename: 'main.js',  // Output file that will be bundled
     path: path.resolve(__dirname, 'dist'),  // Output directory
-    library: 'bkclient',  // Name of the global object
+    library: 'bkclientjs',  // Name of the global object
     libraryTarget: 'umd',  // UMD ensures compatibility with module systems and the global scope
     globalObject: 'this'   // Ensures `window` is used in browsers
   },
@@ -22,7 +22,7 @@ const config: Configuration = {
       },
     ],
   },
-  mode: 'development',  // Set mode to development for better debugging
+  mode: 'production',  // Set mode to development for better debugging
 };
 
 export default config;
