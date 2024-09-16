@@ -32,7 +32,7 @@ let client = await bkclientjs.getClientsNow()
 if (client.length === 0) {
     return
 }
-const ok = bkclientjs.downloadAssetToSoftware(client.port, assetID, assetBaseID, resolution, apiKey, client.software[0].appID)
+const ok = bkclientjs.downloadAssetToSoftware(client.port, client.software[0].appID, assetID, assetBaseID, resolution, apiKey)
 ```
 
 Or you can start a polling and then get the Clients from variable filled by the polling:
@@ -45,6 +45,8 @@ let clients = bkclientjs.getClients()
 
 // or you can get the list of all software - this is what cares of:
 let softwares = bkclientjs.getSoftwares()
+
+const ok = bkclientjs.downloadAssetToSoftware(softwares[0].clientPort, softwares[0].appID, assetID, assetBaseID, resolution, apiKey)
 ```
 
 ## Developing
