@@ -50,6 +50,7 @@ const ok = bkclientjs.downloadAssetToSoftware(softwares[0].clientPort, softwares
 ```
 
 ## Developing
+1. `npm install`
 1. `npm run build` - compile TS to JS in ./dist
 2. `http-server` - serve the example index.html file
 3. navigate to localhost:8080, on refresh browser tries to fetch data from locally running BlenderKit-client, prints to console
