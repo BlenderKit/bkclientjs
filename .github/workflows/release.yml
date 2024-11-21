@@ -47,7 +47,7 @@ jobs:
             ## Release Notes
             - Version: ${{ env.version }}
             - Library: ${{ env.name }}
-          draft: false
+          draft: true
           prerelease: false
 
       # Step 7: Upload artifacts to the release
@@ -56,3 +56,4 @@ jobs:
         with:
           files: "./dist/*" # Matches all files in the dist folder
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+          release-tag: v${{ env.version }}
