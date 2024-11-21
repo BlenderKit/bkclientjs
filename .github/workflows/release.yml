@@ -1,4 +1,4 @@
-name: Manual Release
+name: Create Release
 
 on:
   workflow_dispatch: # Trigger manually
@@ -11,11 +11,11 @@ jobs:
     steps:
       # Step 1: Checkout the repository
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # Step 2: Set up Node.js
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 'lts/*' # Use the latest LTS version
 
@@ -37,7 +37,7 @@ jobs:
       # Step 6: Create the GitHub Release
       - name: Create GitHub Release
         id: create_release
-        uses: actions/create-release@v1
+        uses: comnoco/create-release-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -52,21 +52,7 @@ jobs:
 
       # Step 7: Upload artifacts to the release
       - name: Upload dist folder to Release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: AButler/upload-release-assets@v3.0
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./dist/main.js
-          asset_name: main.js
-          asset_content_type: application/javascript
-
-      - name: Upload TypeScript Declarations
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./dist/main.d.ts
-          asset_name: main.d.ts
-          asset_content_type: text/plain
+          files: "./dist/*" # Matches all files in the dist folder
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
