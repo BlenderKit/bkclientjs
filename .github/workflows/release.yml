@@ -54,6 +54,6 @@ jobs:
       - name: Upload dist folder to Release
         uses: AButler/upload-release-assets@v3.0
         with:
-          files: "./dist/*" # Matches all files in the dist folder
+          files: "${{ github.workspace }}/dist/*" # Matches all files in the dist folder
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           release-tag: v${{ env.version }}
