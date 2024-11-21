@@ -35,12 +35,14 @@ jobs:
           echo "version=$(jq -r '.version' package.json)" >> $GITHUB_ENV
 
       - name: Upload Release
-        uses: xresloader/upload-to-github-release@master
+        uses: xresloader/upload-to-github-release@main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           file: "./dist/*"
           tag_name: v${{ env.version }}
+          default_release_name: "bkclientjs v${{ env.version }}"
+          default_release_body: "version=${{ env.version }}"
           tags: true
           draft: true
           verbose: true
