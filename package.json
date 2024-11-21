@@ -1,6 +1,6 @@
 {
   "name": "bkclientjs",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "JavaScript library for communication between website and local BlenderKit-Client instance.",
   "main": "dist/main.js",
   "types": "dist/main.d.ts",
