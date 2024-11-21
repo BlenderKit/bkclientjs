@@ -34,26 +34,37 @@ jobs:
           echo "name=$(jq -r '.name' package.json)" >> $GITHUB_ENV
           echo "version=$(jq -r '.version' package.json)" >> $GITHUB_ENV
 
-      # Step 6: Create the GitHub Release
-      - name: Create GitHub Release
-        id: create_release
-        uses: comnoco/create-release-action@v2
+      - name: Upload Release
+        uses: xresloader/upload-to-github-release@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          file: "./dist/*"
           tag_name: v${{ env.version }}
-          release_name: ${{ env.name }} v${{ env.version }}
-          body: |
-            ## Release Notes
-            - Version: ${{ env.version }}
-            - Library: ${{ env.name }}
-          draft: false
-          prerelease: false
+          tags: true
+          draft: true
+          verbose: true
+
+      # Step 6: Create the GitHub Release
+      #- name: Create GitHub Release
+      #  id: create_release
+      #  uses: comnoco/create-release-action@v2
+      #  env:
+      #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #  with:
+      #    tag_name: v${{ env.version }}
+      #    release_name: ${{ env.name }} v${{ env.version }}
+      #    body: |
+      #      ## Release Notes
+      #      - Version: ${{ env.version }}
+      #      - Library: ${{ env.name }}
+      #    draft: false
+      #    prerelease: false
 
       # Step 7: Upload artifacts to the release
-      - name: Upload dist folder to Release
-        uses: AButler/upload-release-assets@v3.0
-        with:
-          files: "${{ github.workspace }}/dist/*" # Matches all files in the dist folder
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          release-tag: v${{ env.version }}
+      #- name: Upload dist folder to Release
+      #  uses: AButler/upload-release-assets@v3.0
+      #  with:
+      #    files: "${{ github.workspace }}/dist/*" # Matches all files in the dist folder
+      #    repo-token: ${{ secrets.GITHUB_TOKEN }}
+      #    release-tag: v${{ env.version }}
