@@ -47,7 +47,7 @@ jobs:
             ## Release Notes
             - Version: ${{ env.version }}
             - Library: ${{ env.name }}
-          draft: true
+          draft: false
           prerelease: false
 
       # Step 7: Upload artifacts to the release
