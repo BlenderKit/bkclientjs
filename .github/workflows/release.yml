@@ -1,0 +1,72 @@
+name: Manual Release
+
+on:
+  workflow_dispatch: # Trigger manually
+
+jobs:
+  release:
+    name: Create and Upload Release
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 'lts/*' # Use the latest LTS version
+
+      # Step 3: Install dependencies
+      - name: Install Dependencies
+        run: npm install
+
+      # Step 4: Build the package
+      - name: Build Package
+        run: npm run build
+
+      # Step 5: Get version and name from package.json
+      - name: Read package.json
+        id: package_info
+        run: |
+          echo "name=$(jq -r '.name' package.json)" >> $GITHUB_ENV
+          echo "version=$(jq -r '.version' package.json)" >> $GITHUB_ENV
+
+      # Step 6: Create the GitHub Release
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ env.version }}
+          release_name: ${{ env.name }} v${{ env.version }}
+          body: |
+            ## Release Notes
+            - Version: ${{ env.version }}
+            - Library: ${{ env.name }}
+          draft: false
+          prerelease: false
+
+      # Step 7: Upload artifacts to the release
+      - name: Upload dist folder to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./dist/main.js
+          asset_name: main.js
+          asset_content_type: application/javascript
+
+      - name: Upload TypeScript Declarations
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./dist/main.d.ts
+          asset_name: main.d.ts
+          asset_content_type: text/plain
