@@ -59,7 +59,8 @@
       </ul>
     </div>
 
-    <script>
+    <script type="module">
+      import bkclientjs from './dist/main.js'; // import as ESNext module
       let clients = [];
       const pollingInterval = 500;
     
@@ -174,13 +175,11 @@
     
       // Start polling and updating the clients and software lists periodically
       window.onload = function() {
-        bkclientjs.startClientPolling(5000);
+        bkclientjs.startClientPolling();
         populateClientList(); // Initial population
-        setInterval(populateClientList, pollingInterval); // Periodic polling
+        setInterval(populateClientList, pollingInterval); // Periodic update of the clientList
       };
     </script>
-    
 
-    <script src="./dist/main.js"></script>
   </body>
 </html>

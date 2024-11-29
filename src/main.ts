@@ -1,4 +1,12 @@
-export { downloadAssetToSoftware, getClientsNow, getClients, getSoftwares, startClientPolling, stopClientPolling };
+const bkclientjs = {
+    downloadAssetToSoftware,
+    getClientsNow,
+    getClients,
+    getSoftwares,
+    startClientPolling,
+    stopClientPolling,
+  };
+export default bkclientjs;
 
 /** As defined in CLIENT_PORTS in https://github.com/BlenderKit/BlenderKit/blob/main/global_vars.py */
 let CLIENT_PORTS = ["65425", "55428", "49452", "35452", "25152", "5152", "1234", "62485"];
@@ -22,6 +30,7 @@ interface ClientStatus {
  * @property {string} appID - PID aka Process ID of the software
  * @property {string} addonVersion - Version of the add-on installed in the Software, e.g.: 3.12.3
  * @property {string} clientPort - port of the Client to which Software is connected
+ * @property {string} project - name of the project opened in the Software, used to identify the Software in more detailed way
  */
 interface Software {
     name: string;
@@ -29,18 +38,27 @@ interface Software {
     appID: number;
     addonVersion: string;
     clientPort: string;
+    project: string;
 }
+
+/** How much the functions should be verbose.
+ * - 0 = FATAL: only fatal and unexpected errors will be reported
+ * - 1 = INFO: little bit unexpected errors will be reported
+ * - 2 = DEBUG: even failed requests will be reported, all details for debugging
+ */
+type Verbosity = 0 | 1 | 2;
 
 /** Scan for the Clients right now. Make requests iterating over all possible ports Client can have on the localhost
  * and get their ClientStatuses if possible. Use the statuses to update UI and inform user where they can download the asset from browser gallery.
+ * @param verbosity
  * @returns first successful response from local Client or null if something went wrong.
  */
-async function getClientsNow(): Promise<ClientStatus[]> {
+async function getClientsNow(verbosity: Verbosity = 0): Promise<ClientStatus[]> {
     let statuses: ClientStatus[] = []
     for (const port of CLIENT_PORTS) {
         /** Defined in bkclientjsStatusHandler in https://github.com/BlenderKit/BlenderKit/blob/main/client/main.go. */
         const url: string = `http://localhost:${port}/bkclientjs/status`;
-        let clientStatus = await _tryClientStatus(url)
+        let clientStatus = await _tryClientStatus(url, verbosity)
         if (clientStatus === null) {
             continue
         }
@@ -55,18 +73,18 @@ async function getClientsNow(): Promise<ClientStatus[]> {
  * @param url Address where to check if Client replies
  * @returns response of the Client or null if something went wrong
  */
-async function _tryClientStatus(url: string): Promise<ClientStatus|null> {
+async function _tryClientStatus(url: string, verbosity: Verbosity = 0): Promise<ClientStatus|null> {
     let clientStatus: ClientStatus
     try {
         const resp = await fetch(url);
         if (resp.status !== 200) {
-            console.log(`Wrong status code: ${resp.status}`);
+            if (verbosity > 0) console.log(`Wrong status code: ${resp.status}`);
             return null;
         }
         console.log("Client response:", resp)
         clientStatus = await resp.json() as ClientStatus;
     } catch (err) {
-        console.error("Error getting response:", err);
+        if (verbosity > 1) console.error("Error getting response:", err);
         return null;
     }
 
@@ -142,20 +160,28 @@ function getSoftwares(): Software[] {
 
 // MARK: POLLING
 
-async function startClientPolling(interval: number) {
+
+/** Start periodic polling/search on localhost for available Clients (and Softwares connected to them).
+ * 
+ * @param {number} [interval=5000] how often the bkclientjs should check for the running Clients and Softwares
+ * @param {boolean} [verbosity=0] true it will print debug info about the request to Client
+ * @returns 
+ */
+async function startClientPolling(interval: number = 5000, verbosity: Verbosity = 0) {
     if (pollingInterval) {
         console.log("Polling is already running");
         return;
     }
+
     pollingInterval = setInterval(async () => {
         try {
             connectedClients = await getClientsNow();
-            console.log("Updated clients:", connectedClients);
+            if (verbosity > 0) console.log("Updated clients:", connectedClients);
         } catch (error) {
-            console.error("Error while fetching clients:", error);
+            if (verbosity > 1) console.error("Error while fetching clients:", error);
         }
     }, interval);
-    console.log(`Polling started with interval: ${interval}ms`);
+    console.log(`Polling started with interval: ${interval}ms, verbosity: ${verbosity}`);
 }
 
 
