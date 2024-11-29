@@ -37,7 +37,7 @@ const ok = bkclientjs.downloadAssetToSoftware(client.port, client.software[0].ap
 
 Or you can start a polling and then get the Clients from variable filled by the polling:
 ```javascript
-bkclientjs.startClientPolling(500); // library will check for the Clients every 500ms
+bkclientjs.startClientPolling(1000); // library will check for the Clients every 1000ms,
 
 // later - ideally in your own Timeout update function
 // results are available without need for await via:
@@ -48,6 +48,10 @@ let softwares = bkclientjs.getSoftwares()
 
 const ok = bkclientjs.downloadAssetToSoftware(softwares[0].clientPort, softwares[0].appID, assetID, assetBaseID, resolution, apiKey)
 ```
+
+### Verbosity
+
+You can make the library more verbose by calling the with verbosity 1 (INFO) or 2 (DEBUG): `bkclientjs.startClientPolling(1000, 2);`.
 
 ## Developing
 1. `npm install`
