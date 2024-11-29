@@ -173,6 +173,15 @@ async function startClientPolling(interval: number = 5000, verbosity: Verbosity 
         return;
     }
 
+    try { // Start polling right away
+        connectedClients = await getClientsNow();
+        console.log("Updated clients:", connectedClients);
+    } catch (error) {
+        if (verbosity > 0) {
+            console.error("Error while fetching clients (immediate):", error);
+        }
+    }
+
     pollingInterval = setInterval(async () => {
         try {
             connectedClients = await getClientsNow();
