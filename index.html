@@ -18,6 +18,9 @@
     </div>
     
     <div>
+      Project Name = <span id="project-name"></span>
+    </div>
+    <div>
       Software AppID = <span id="app-id"></span>
     </div>
     <div>
@@ -130,10 +133,12 @@
         const selectedAppID = this.value; // Get the selected appID
     
         // Find the client and port associated with the selected software
+        let selectedProjectName = "";
         let selectedPort = "";
         for (let client of clients) {
           for (let software of client.softwares) {
             if (software.appID == selectedAppID) {
+              selectedProjectName = software.projectName;
               selectedPort = client.port;
               break;
             }
@@ -142,6 +147,7 @@
         }
     
         // Update the AppID and Port spans
+        document.getElementById("project-name").textContent = selectedProjectName; // Update the Project name
         document.getElementById("app-id").textContent = selectedAppID; // Update the AppID span
         document.getElementById("port").textContent = selectedPort; // Update the Port span
       });

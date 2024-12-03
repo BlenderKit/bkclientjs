@@ -38,7 +38,7 @@ interface Software {
     appID: number;
     addonVersion: string;
     clientPort: string;
-    project: string;
+    projectName: string;
 }
 
 /** How much the functions should be verbose.
