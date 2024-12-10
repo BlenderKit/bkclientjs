@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>HTML 5 Boilerplate</title>
+    <title>Web -> Client -> Godot</title>
     <link rel="stylesheet" href="style.css">
   </head>
   <body>
-    <h1>Download from browser PoC</h1>    
+    <h1>Download from browser to Godot PoC</h1>    
     <div>
       Softwares
       <select id="software">
@@ -53,7 +53,7 @@
       (user will choose)
     </div>
     
-    <button id="download" onclick="DownloadButtonClicked()">Download</button>
+    <button id="download">Download</button>
 
     <div>
       <h2>Clients</h2>
@@ -127,11 +127,10 @@
           softwareSelect.value = selectedValue;
         }
       }
-    
+
       // Event listener for when a software is selected
       document.getElementById("software").addEventListener("change", function() {
         const selectedAppID = this.value; // Get the selected appID
-    
         // Find the client and port associated with the selected software
         let selectedProjectName = "";
         let selectedPort = "";
@@ -145,7 +144,6 @@
           }
           if (selectedPort) break;
         }
-    
         // Update the AppID and Port spans
         document.getElementById("project-name").textContent = selectedProjectName; // Update the Project name
         document.getElementById("app-id").textContent = selectedAppID; // Update the AppID span
@@ -178,6 +176,8 @@
         let ok = await bkclientjs.downloadAssetToSoftware(port, appID, assetID, assetBaseID, resolution, apiKey, );
         console.log("Download ok:", ok)
       }
+
+      document.getElementById("download").addEventListener("click", DownloadButtonClicked)
     
       // Start polling and updating the clients and software lists periodically
       window.onload = function() {
