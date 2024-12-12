@@ -9,7 +9,7 @@ const bkclientjs = {
 export default bkclientjs;
 
 /** As defined in CLIENT_PORTS in https://github.com/BlenderKit/BlenderKit/blob/main/global_vars.py */
-let CLIENT_PORTS = ["65425", "55428", "49452", "35452", "25152", "5152", "1234", "62485"];
+let CLIENT_PORTS = ["62485", "65425", "55428", "49452", "35452", "25152", "5152", "1234"];
 let pollingInterval: ReturnType<typeof setInterval> | undefined; 
 let connectedClients: ClientStatus[];
 
