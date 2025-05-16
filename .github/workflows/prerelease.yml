@@ -51,7 +51,23 @@ jobs:
           echo "version=${PRERELEASE_VERSION}" >> $GITHUB_ENV
           echo "base_version=${BASE_VERSION}" >> $GITHUB_ENV
 
-      - name: Create Release
+      # Create the version-tagged release
+      - name: Create Versioned Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/**/*
+          tag_name: v${{ env.base_version }}
+          name: bkclientjs v${{ env.base_version }}
+          body: |
+            - Version: ${{ env.version }}
+            - Base Version: ${{ env.base_version }}
+            - Commit: ${{ github.sha }}
+          draft: false
+          prerelease: true
+
+      # Create the stable/dev release
+      - name: Create Stable/Dev Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
