@@ -57,8 +57,8 @@ jobs:
         with:
           files: |
             dist/**/*
-          tag_name: v${{ env.base_version }}
-          name: bkclientjs v${{ env.base_version }}
+          tag_name: v${{ env.version }}
+          name: bkclientjs v${{ env.version }}
           body: |
             - Version: ${{ env.version }}
             - Base Version: ${{ env.base_version }}
