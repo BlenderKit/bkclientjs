@@ -68,12 +68,12 @@ jobs:
         with:
           files: |
             dist/**/*
-          tag_name: v${{ env.version }}
-          name: bkclientjs v${{ env.version }}
+          tag_name: ${{ inputs.stable && format('v{0}', env.base_version) || format('v{0}', env.version) }}
+          name: ${{ inputs.stable && format('bkclientjs v{0}', env.base_version) || format('bkclientjs v{0}', env.version) }}
           body: |
             - Version: ${{ env.version }}
             - Base Version: ${{ env.base_version }}
             - Commit: ${{ github.sha }}
             - Updated: ${{ github.event.repository.updated_at }}
           draft: false
-          prerelease: true
+          prerelease: ${{ github.event_name == 'push' || !inputs.stable }}
