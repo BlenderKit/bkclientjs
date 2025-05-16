@@ -51,7 +51,18 @@ jobs:
           echo "version=${PRERELEASE_VERSION}" >> $GITHUB_ENV
           echo "base_version=${BASE_VERSION}" >> $GITHUB_ENV
 
-      # Create the version-tagged release
+      # Step 6: Push to devel/prod branch
+      - name: Push to Branch
+        run: |
+          BRANCH=${{ (github.event_name == 'push' || !inputs.stable) && 'dev' || 'prod' }}
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git checkout -b $BRANCH
+          git add dist/
+          git commit -m "Update dist files [skip ci]"
+          git push origin $BRANCH --force
+
+      # Create the versioned release
       - name: Create Versioned Release
         uses: softprops/action-gh-release@v2
         with:
@@ -66,19 +77,3 @@ jobs:
             - Updated: ${{ github.event.repository.updated_at }}
           draft: false
           prerelease: true
-
-      # Create the stable/dev release
-      - name: Create Stable/Dev Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            dist/**/*
-          tag_name: ${{ (github.event_name == 'push' || !inputs.stable) && 'dev' || 'stable' }}
-          name: bkclientjs@${{ (github.event_name == 'push' || !inputs.stable) && 'dev' || 'stable' }}
-          body: |
-            - Version: ${{ env.version }}
-            - Base Version: ${{ env.base_version }}
-            - Commit: ${{ github.sha }}
-            - Updated: ${{ github.event.repository.updated_at }}
-          draft: false
-          prerelease: ${{ github.event_name == 'push' || !inputs.stable }}
