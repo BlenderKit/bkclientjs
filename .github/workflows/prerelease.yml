@@ -1,0 +1,61 @@
+name: Auto Prerelease
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    name: Create and Upload Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for all branches and tags
+
+      # Step 2: Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # Step 3: Install dependencies
+      - name: Install Dependencies
+        run: npm install
+
+      # Step 4: Build the package
+      - name: Build Package
+        run: npm run build
+
+      # Step 5: Get version and name from package.json and create version with commit hash
+      - name: Read package.json and create version
+        id: package_info
+        run: |
+          BASE_VERSION=$(jq -r '.version' package.json)
+          COMMIT_HASH=$(git rev-parse --short HEAD)
+          PRERELEASE_VERSION="${BASE_VERSION}-${COMMIT_HASH}"
+          echo "name=$(jq -r '.name' package.json)" >> $GITHUB_ENV
+          echo "version=${PRERELEASE_VERSION}" >> $GITHUB_ENV
+          echo "base_version=${BASE_VERSION}" >> $GITHUB_ENV
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/**/*
+          tag_name: dev
+          name: bkclientjs v${{ env.version }}
+          body: |
+            ## Prerelease Notes
+            - Version: ${{ env.version }}
+            - Base Version: ${{ env.base_version }}
+            - Commit: ${{ github.sha }}
+          draft: false
+          prerelease: true
