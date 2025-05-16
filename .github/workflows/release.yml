@@ -1,4 +1,4 @@
-name: Auto Prerelease
+name: Release
 
 on:
   workflow_dispatch:
@@ -63,6 +63,7 @@ jobs:
             - Version: ${{ env.version }}
             - Base Version: ${{ env.base_version }}
             - Commit: ${{ github.sha }}
+            - Updated: ${{ github.event.repository.updated_at }}
           draft: false
           prerelease: true
 
@@ -78,5 +79,6 @@ jobs:
             - Version: ${{ env.version }}
             - Base Version: ${{ env.base_version }}
             - Commit: ${{ github.sha }}
+            - Updated: ${{ github.event.repository.updated_at }}
           draft: false
           prerelease: ${{ github.event_name == 'push' || !inputs.stable }}
