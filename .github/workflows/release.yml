@@ -59,7 +59,7 @@ jobs:
           git config --global user.email "actions@github.com"
           git checkout -b $BRANCH
           git add -f dist/
-          git commit -m "Update dist files [skip ci]"
+          git commit -m "Update dist files for ${{ env.version }} [skip ci]"
           git push origin $BRANCH --force
 
       # Create the versioned release
