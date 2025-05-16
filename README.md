@@ -80,3 +80,8 @@ You can make the library more verbose by calling the with verbosity 1 (INFO) or 
 1. `npm run build` - compile TS to JS in ./dist
 2. `http-server` - serve the example index.html file
 3. navigate to localhost:8080, on refresh browser tries to fetch data from locally running BlenderKit-client, prints to console
+
+## Release
+
+Start the release workflow in GitHub Actions: https://github.com/BlenderKit/bkclientjs/actions/workflows/release.yml.
+Bump the version in package.json, and optionally set the `production` input to `true` to create a production release.
