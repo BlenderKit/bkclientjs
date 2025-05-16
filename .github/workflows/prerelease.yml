@@ -2,6 +2,12 @@ name: Auto Prerelease
 
 on:
   workflow_dispatch:
+    inputs:
+      stable:
+        description: 'Create a stable release'
+        required: false
+        type: boolean
+        default: false
   push:
     branches:
       - main
@@ -50,12 +56,11 @@ jobs:
         with:
           files: |
             dist/**/*
-          tag_name: dev
+          tag_name: ${{ github.event_name == 'push' || !inputs.stable && 'dev' || 'stable' }}
           name: bkclientjs v${{ env.version }}
           body: |
-            ## Prerelease Notes
             - Version: ${{ env.version }}
             - Base Version: ${{ env.base_version }}
             - Commit: ${{ github.sha }}
           draft: false
-          prerelease: true
+          prerelease: ${{ github.event_name == 'push' || !inputs.stable }}
