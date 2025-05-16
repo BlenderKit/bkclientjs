@@ -4,6 +4,23 @@ Library allows to order in browser the asset downloads to the softwares connecte
 
 ## Usage
 
+### Install
+
+Library is released via GitHub Releases - under `stable` and `dev` tags.
+Semver tags are also available as fallback (but GH does not support 2 tags for the same release).
+
+#### Stable
+Latest stable version is available under `stable` tag.
+Just link to those files on production:
+- https://github.com/BlenderKit/bkclientjs/releases/download/stable/main.js
+- https://github.com/BlenderKit/bkclientjs/releases/download/stable/main.d.ts
+
+#### Dev
+Latest development version is available under `dev` tag.
+Just link to those files on devel:
+- https://github.com/BlenderKit/bkclientjs/releases/download/dev/main.js
+- https://github.com/BlenderKit/bkclientjs/releases/download/dev/main.d.ts
+
 ### Get running Clients
 With the library you can easily scan localhost for all currently running BlenderKit-Clients.
 Library returns found Clients as array of ClientStatus - array is empty if no Client responded.

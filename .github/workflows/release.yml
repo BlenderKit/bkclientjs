@@ -74,7 +74,7 @@ jobs:
           files: |
             dist/**/*
           tag_name: ${{ (github.event_name == 'push' || !inputs.stable) && 'dev' || 'stable' }}
-          name: bkclientjs v${{ env.version }}
+          name: bkclientjs@${{ (github.event_name == 'push' || !inputs.stable) && 'dev' || 'stable' }}
           body: |
             - Version: ${{ env.version }}
             - Base Version: ${{ env.base_version }}
