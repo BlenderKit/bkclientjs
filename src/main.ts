@@ -12,6 +12,9 @@ export default bkclientjs;
 let CLIENT_PORTS = ["62485", "65425", "55428", "49452", "35452", "25152", "5152", "1234"];
 let pollingInterval: ReturnType<typeof setInterval> | undefined; 
 let connectedClients: ClientStatus[];
+/** Lock to prevent overlapping polling cycles. */
+let _pollingBusy = false;
+type UpdateCallback = (clients: ClientStatus[]) => void | Promise<void>;
 
 /** Holds all the data reported by Client about it status and currently connected softwares.
  * @property {string} clientVersion - version of the Client, e.g. 1.2.1
@@ -167,27 +170,49 @@ function getSoftwares(): Software[] {
  * @param {boolean} [verbosity=0] true it will print debug info about the request to Client
  * @returns 
  */
-async function startClientPolling(interval: number = 5000, verbosity: Verbosity = 0) {
+async function startClientPolling(
+    interval: number = 5000,
+    verbosity: Verbosity = 0,
+    onUpdate?: UpdateCallback
+): Promise<void> {
     if (pollingInterval) {
         console.log("Polling is already running");
         return;
     }
 
     try { // Start polling right away
-        connectedClients = await getClientsNow();
+        _pollingBusy = true;
+        connectedClients = await getClientsNow(verbosity);
         console.log("Updated clients:", connectedClients);
     } catch (error) {
-        if (verbosity > 0) {
-            console.error("Error while fetching clients (immediate):", error);
-        }
+        if (verbosity > 0) console.error("Error while fetching clients (immediate):", error);
+    } finally {
+        _pollingBusy = false;
     }
 
+    // Fire callback after the initial fetch
+    try {
+        if (onUpdate) await onUpdate(connectedClients);
+    } catch (callbackError) {
+        if (verbosity > 0) console.error("onUpdate (initial) failed:", callbackError);
+    }
+
+    // Recurring polling
     pollingInterval = setInterval(async () => {
+        if (_pollingBusy) {
+            if (verbosity > 1) console.log("Skip poll: previous cycle still running.");
+            return;
+        }
+
+        _pollingBusy = true;
         try {
-            connectedClients = await getClientsNow();
+            connectedClients = await getClientsNow(verbosity);
             if (verbosity > 0) console.log("Updated clients:", connectedClients);
+            if (onUpdate) await onUpdate(connectedClients); // <- runs AFTER cycle finishes
         } catch (error) {
             if (verbosity > 1) console.error("Error while fetching clients:", error);
+        } finally {
+            _pollingBusy = false;
         }
     }, interval);
     console.log(`Polling started with interval: ${interval}ms, verbosity: ${verbosity}`);
