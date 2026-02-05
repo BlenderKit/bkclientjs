@@ -60,7 +60,7 @@ async function getClientsNow(verbosity: Verbosity = 0): Promise<ClientStatus[]> 
     let statuses: ClientStatus[] = []
     for (const port of CLIENT_PORTS) {
         /** Defined in bkclientjsStatusHandler in https://github.com/BlenderKit/BlenderKit/blob/main/client/main.go. */
-        const url: string = `http://localhost:${port}/bkclientjs/status`;
+        const url: string = `http://127.0.0.1:${port}/bkclientjs/status`;
         let clientStatus = await _tryClientStatus(url, verbosity)
         if (clientStatus === null) {
             continue
@@ -109,7 +109,7 @@ async function _tryClientStatus(url: string, verbosity: Verbosity = 0): Promise<
  */
 async function downloadAssetToSoftware (clientPort: string, appID: number, assetID: string, assetBaseID: string, resolution: string, apiKey: string): Promise<boolean> {
     /** Defined in bkclientjsGetAssetHandler in https://github.com/BlenderKit/BlenderKit/blob/main/client/main.go. */
-    const url = `http://localhost:${clientPort}/bkclientjs/get_asset`;
+    const url = `http://127.0.0.1:${clientPort}/bkclientjs/get_asset`;
     const data = JSON.stringify({
         "api_key": apiKey,
         "asset_id": assetID,
