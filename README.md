@@ -77,9 +77,12 @@ You can make the library more verbose by calling the with verbosity 1 (INFO) or 
 
 ## Developing
 1. `npm install`
-1. `npm run build` - compile TS to JS in ./dist
-2. `http-server` - serve the example index.html file
-3. navigate to localhost:8080, on refresh browser tries to fetch data from locally running BlenderKit-client, prints to console
+2. `npm run build` - compile TS to JS in ./dist
+3. `npx http-server` - serve the example index.html file
+4. navigate to http://localhost:8080 - browser tries to fetch data from locally
+   running BlenderKit-client.
+
+**NOTE**: `127.0.0.1` gets treated differently than `localhost` in CORS - `localhost` might work where `127.0.0.1` doesn't.
 
 ## Release
 
