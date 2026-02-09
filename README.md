@@ -1,4 +1,5 @@
 # bkclientjs
+
 JavaScript library for communication between Server and locally running BlenderKit-Client.
 Library allows to order in browser the asset downloads to the softwares connected to BlenderKit-Client.
 
@@ -8,25 +9,28 @@ Library allows to order in browser the asset downloads to the softwares connecte
 
 For usage on devel and production server, the library build is released into `dev` and `prod` branches.
 `dev` branch is build every time there is a push to `main` branch, the `prod` branch build needs to be triggered manually.
-Files are located in `dist` folder. 
+Files are located in `dist` folder.
 (For archival reasons, or when exact version control is needed, the library is also released via GitHub Releases with semantic versioning.)
 
 Production files:
+
 - https://raw.githubusercontent.com/BlenderKit/bkclientjs/refs/heads/prod/dist/main.js
 - https://raw.githubusercontent.com/BlenderKit/bkclientjs/refs/heads/prod/dist/main.d.ts
 
 Development files:
+
 - https://raw.githubusercontent.com/BlenderKit/bkclientjs/refs/heads/dev/dist/main.js
 - https://raw.githubusercontent.com/BlenderKit/bkclientjs/refs/heads/dev/dist/main.d.ts
 
 You can also access the files via jsDelivr CDN:
+
 - https://cdn.jsdelivr.net/gh/BlenderKit/bkclientjs@prod/dist/main.js
 - https://cdn.jsdelivr.net/gh/BlenderKit/bkclientjs@prod/dist/main.d.ts
 - https://cdn.jsdelivr.net/gh/BlenderKit/bkclientjs@dev/dist/main.js
 - https://cdn.jsdelivr.net/gh/BlenderKit/bkclientjs@dev/dist/main.d.ts
 
-
 ### Get running Clients
+
 With the library you can easily scan localhost for all currently running BlenderKit-Clients.
 Library returns found Clients as array of ClientStatus - array is empty if no Client responded.
 Normally there should be 1 Client, but can be more in rare cases.
@@ -38,6 +42,7 @@ Client is uniquely identified by its Port.
 Software is uniquely identified by its PID (Process ID).
 
 ### Schedule download
+
 User is presented with download options on the asset they are previewing in the browser asset gallery.
 E.g.: they see they have 2 Blenders and 1 Godot connected. They choose download to Godot.
 You can ask for the download with this library specifying the AssetID, software PID, apiToken and clientPort.
@@ -49,26 +54,42 @@ For Godot and other softwares we might just download the asset into specified di
 ### Example:
 
 If you want to get the Clients on demand right now:
+
 ```javascript
-let client = await bkclientjs.getClientsNow()
+let client = await bkclientjs.getClientsNow();
 if (client.length === 0) {
-    return
+  return;
 }
-const ok = bkclientjs.downloadAssetToSoftware(client.port, client.software[0].appID, assetID, assetBaseID, resolution, apiKey)
+const ok = bkclientjs.downloadAssetToSoftware(
+  client.port,
+  client.software[0].appID,
+  assetID,
+  assetBaseID,
+  resolution,
+  apiKey,
+);
 ```
 
 Or you can start a polling and then get the Clients from variable filled by the polling:
+
 ```javascript
 bkclientjs.startClientPolling(1000); // library will check for the Clients every 1000ms,
 
 // later - ideally in your own Timeout update function
 // results are available without need for await via:
-let clients = bkclientjs.getClients()
+let clients = bkclientjs.getClients();
 
 // or you can get the list of all software - this is what cares of:
-let softwares = bkclientjs.getSoftwares()
+let softwares = bkclientjs.getSoftwares();
 
-const ok = bkclientjs.downloadAssetToSoftware(softwares[0].clientPort, softwares[0].appID, assetID, assetBaseID, resolution, apiKey)
+const ok = bkclientjs.downloadAssetToSoftware(
+  softwares[0].clientPort,
+  softwares[0].appID,
+  assetID,
+  assetBaseID,
+  resolution,
+  apiKey,
+);
 ```
 
 ### Verbosity
@@ -76,6 +97,7 @@ const ok = bkclientjs.downloadAssetToSoftware(softwares[0].clientPort, softwares
 You can make the library more verbose by calling the with verbosity 1 (INFO) or 2 (DEBUG): `bkclientjs.startClientPolling(1000, 2);`.
 
 ## Developing
+
 1. `npm install`
 2. `npm run build` - compile TS to JS in ./dist
 3. `npx http-server` - serve the example index.html file
