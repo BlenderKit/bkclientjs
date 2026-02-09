@@ -3,188 +3,273 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Web -> Client -> Godot</title>
+    <title>bkclientjs dev</title>
     <link rel="stylesheet" href="style.css">
   </head>
   <body>
-    <h1>Download from browser to Godot PoC</h1>    
-    <div>
-      Softwares
-      <select id="software">
-        <option value="" disabled selected>Select Software</option>
-      </select>
-      (dynamically detected, make sure at least 1 client is running)
-    </div>
-    
-    <div>
-      Project Name = <span id="project-name"></span>
-    </div>
-    <div>
-      Software AppID = <span id="app-id"></span>
-    </div>
-    <div>
-      Client Port = <span id="port"></span>
+
+    <div class="top-bar">
+      <h1>bkclientjs dev</h1>
+      <div class="badge" id="poll-badge">
+        <span class="dot" id="poll-dot"></span>
+        <span id="poll-label">stopped</span>
+      </div>
+      <button id="btn-scan">Scan Now</button>
     </div>
 
-    </br>
+    <div class="polling-info">
+      <span>Scan: <strong id="info-scan-time">-</strong></span>
+      <span>Clients: <strong id="info-client-count">0</strong></span>
+      <span>Softwares: <strong id="info-sw-count">0</strong></span>
+    </div>
 
-    <div>
-      APIKey
-      <input type="text" id="api-key" placeholder="API Key" value="">
-      (this will fill in the webpage, because user is logged-in)
-    </div>
-        
-    <div>
-      AssetID
-      <input type="text" id="asset-id" placeholder="Asset ID" value="0992088b-fb84-4c69-bb6e-426272970c8b">
-      (this will fill the webpage, we know on which asset user clicks the download)
-    </div>
-    
-    <div>
-      Asset Base ID
-      <input type="text" id="asset-base-id" placeholder="Asset Base ID" value="67f55944-a088-48de-8a60-6132547cbf75">
-      (this will fill the webpage, we know on which asset user clicks the download)
-    </div>
-    
-    <div>
-      Resolution
-      <input type="text" id="resolution" placeholder="Resolution" value="resolution_4K">
-      (user will choose)
-    </div>
-    
-    <button id="download">Download</button>
+    <!-- Ports -->
+    <section>
+      <div class="section-header">
+        <h2>Ports</h2>
+      </div>
+      <div class="ports-grid" id="ports-grid"></div>
+    </section>
 
-    <div>
-      <h2>Clients</h2>
-      <ul id="client-list">
-        <!-- List of connected clients will be populated here -->
-      </ul>
-    </div>
+    <!-- Clients -->
+    <section>
+      <div class="section-header">
+        <h2>Clients</h2>
+        <span class="count" id="clients-count"></span>
+        <button class="json-toggle" id="btn-clients-json">raw json</button>
+      </div>
+      <div class="card-grid" id="clients-grid"></div>
+      <div class="json-block" id="clients-json"></div>
+    </section>
+
+    <!-- Softwares -->
+    <section>
+      <div class="section-header">
+        <h2>Softwares</h2>
+        <span class="count" id="sw-count"></span>
+        <button class="json-toggle" id="btn-sw-json">raw json</button>
+      </div>
+      <div class="card-grid" id="sw-grid"></div>
+      <div class="json-block" id="sw-json"></div>
+    </section>
+
+    <!-- Download -->
+    <section>
+      <h2>Download Asset</h2>
+      <br>
+      <div class="form-grid">
+        <label for="f-software">Software</label>
+        <select id="f-software">
+          <option value="" disabled selected>Select software</option>
+        </select>
+
+        <label for="f-api-key">API Key</label>
+        <input type="text" id="f-api-key" placeholder="api key">
+
+        <label for="f-asset-id">Asset ID</label>
+        <input type="text" id="f-asset-id" placeholder="asset id" value="0992088b-fb84-4c69-bb6e-426272970c8b">
+
+        <label for="f-asset-base-id">Asset Base ID</label>
+        <input type="text" id="f-asset-base-id" placeholder="asset base id" value="67f55944-a088-48de-8a60-6132547cbf75">
+
+        <label for="f-resolution">Resolution</label>
+        <input type="text" id="f-resolution" placeholder="resolution" value="resolution_4K">
+      </div>
+
+      <div class="download-bar">
+        <button class="primary" id="btn-download">Download</button>
+        <span id="download-status"></span>
+      </div>
+    </section>
 
     <script type="module">
-      import bkclientjs from './dist/main.js'; // import as ESNext module
-      let clients = [];
-      const pollingInterval = 500;
-    
-      // Function to populate the client list with available clients
-      async function populateClientList() {
-        clients = await bkclientjs.getClients();
-        const clientList = document.getElementById("client-list");
-    
-        // Clear the existing client list
-        clientList.innerHTML = '';
-    
-        if (!clients || clients.length === 0) {
-          console.log("No Clients running.");
-          return;
-        }
-    
-        // Populate the list with connected clients
-        clients.forEach(client => {
-          const listItem = document.createElement("li");
-          listItem.textContent = `Client on port ${client.port} (version: ${client.clientVersion})`;
-          clientList.appendChild(listItem);
-        });
-    
-        // Update the software dropdown with the latest software
-        populateSoftwareDropdown();
-      }
-    
-      let isDropdownFocused = false; // Flag to track if the dropdown is focused
-    
-      // Function to populate the software dropdown with available software
-      async function populateSoftwareDropdown() {
-        if (isDropdownFocused) {
-          // Don't update the dropdown if the user is interacting with it
-          return;
-        }
-    
-        const softwareSelect = document.getElementById("software");
-    
-        // Save the currently selected value
-        const selectedValue = softwareSelect.value;
-    
-        // Clear existing options (keep the placeholder)
-        softwareSelect.innerHTML = '<option value="" disabled selected>Select Software</option>';
-    
-        const softwares = await bkclientjs.getSoftwares();
-    
-        if (!softwares || softwares.length === 0) {
-          console.log("No Software running.");
-          return;
-        }
-    
-        softwares.forEach(software => {
-          const option = document.createElement("option");
-          option.value = software.appID; // Use the appID as the value
-          option.textContent = `${software.name} (v${software.version})`;
-          softwareSelect.appendChild(option);
-        });
-    
-        // Restore the previously selected value if it exists
-        if (selectedValue) {
-          softwareSelect.value = selectedValue;
-        }
+      import bkclientjs from './dist/main.js';
+
+      // --- State ---
+      const POLL_INTERVAL = 5000;
+      const POLL_VERBOSITY = 1;
+      const CLIENT_PORTS = ["62485","65425","55428","49452","35452","25152","5152","1234"];
+      let latestClients = [];
+      let firstFetchDone = false;
+
+      // --- DOM refs ---
+      const $pollDot      = document.getElementById('poll-dot');
+      const $pollLabel     = document.getElementById('poll-label');
+      const $infoScanTime  = document.getElementById('info-scan-time');
+      const $infoClients   = document.getElementById('info-client-count');
+      const $infoSw        = document.getElementById('info-sw-count');
+      const $portsGrid     = document.getElementById('ports-grid');
+      const $clientsGrid   = document.getElementById('clients-grid');
+      const $clientsCount  = document.getElementById('clients-count');
+      const $clientsJson   = document.getElementById('clients-json');
+      const $swGrid        = document.getElementById('sw-grid');
+      const $swCount       = document.getElementById('sw-count');
+      const $swJson        = document.getElementById('sw-json');
+      const $software      = document.getElementById('f-software');
+      const $dlStatus      = document.getElementById('download-status');
+
+      function escapeHtml(s) {
+        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
       }
 
-      // Event listener for when a software is selected
-      document.getElementById("software").addEventListener("change", function() {
-        const selectedAppID = this.value; // Get the selected appID
-        // Find the client and port associated with the selected software
-        let selectedProjectName = "";
-        let selectedPort = "";
-        for (let client of clients) {
-          for (let software of client.softwares) {
-            if (software.appID == selectedAppID) {
-              selectedProjectName = software.projectName;
-              selectedPort = client.port;
-              break;
-            }
+      // --- Ports display ---
+      function renderPorts(activePorts) {
+        $portsGrid.innerHTML = CLIENT_PORTS.map(p => {
+          let cls = 'port-row';
+          if (!firstFetchDone) cls += ' port-unknown';
+          else if (activePorts.has(p)) cls += ' port-active';
+          else cls += ' port-inactive';
+          return `<div class="${cls}"><span class="port-dot"></span><span class="port-number">${p}</span></div>`;
+        }).join('');
+      }
+      renderPorts(new Set()); // initial render - all black
+
+      // --- Timed scan wrapper ---
+      async function timedScan(verbosity) {
+        const t0 = performance.now();
+        const clients = await bkclientjs.getClientsNow(verbosity);
+        const ms = Math.round(performance.now() - t0);
+        $infoScanTime.textContent = `${ms} ms`;
+        firstFetchDone = true;
+        return clients;
+      }
+
+      // --- Render ---
+      function renderClients(clients) {
+        latestClients = clients || [];
+        const count = latestClients.length;
+        $infoClients.textContent = count;
+        $clientsCount.textContent = `(${count})`;
+
+        // Polling badge
+        $pollDot.className = 'dot ' + (count > 0 ? 'green' : 'yellow');
+        $pollLabel.textContent = count > 0 ? `${count} client${count > 1 ? 's' : ''}` : 'polling...';
+
+        // Ports
+        const activePorts = new Set(latestClients.map(c => c.port));
+        renderPorts(activePorts);
+
+        // Client cards
+        if (count === 0) {
+          $clientsGrid.innerHTML = '<div class="empty-msg">No clients detected. Make sure at least one client is running.</div>';
+        } else {
+          $clientsGrid.innerHTML = latestClients.map((c, i) => `
+            <div class="card">
+              <dl>
+                <dt>Port</dt><dd>${c.port}</dd>
+                <dt>Client Version</dt><dd>${c.clientVersion}</dd>
+                <dt>Softwares</dt><dd>${c.softwares.length}</dd>
+              </dl>
+              <button class="json-toggle" onclick="this.nextElementSibling.classList.toggle('open')">raw json</button>
+              <div class="json-block">${escapeHtml(JSON.stringify(c, null, 2))}</div>
+            </div>
+          `).join('');
+        }
+
+        // Raw JSON for all clients
+        $clientsJson.textContent = JSON.stringify(latestClients, null, 2);
+
+        // Softwares
+        renderSoftwares();
+        renderSoftwareDropdown();
+      }
+
+      function renderSoftwares() {
+        const softwares = [];
+        for (const c of latestClients) {
+          for (const sw of c.softwares) {
+            softwares.push({ ...sw, _clientPort: c.port });
           }
-          if (selectedPort) break;
         }
-        // Update the AppID and Port spans
-        document.getElementById("project-name").textContent = selectedProjectName; // Update the Project name
-        document.getElementById("app-id").textContent = selectedAppID; // Update the AppID span
-        document.getElementById("port").textContent = selectedPort; // Update the Port span
-      });
-    
-      // Add event listeners to pause and resume dropdown updates
-      document.getElementById("software").addEventListener("focus", () => {
-        isDropdownFocused = true;
-      });
-    
-      document.getElementById("software").addEventListener("blur", () => {
-        isDropdownFocused = false;
-      });
-    
-      // Function to handle the download button click
-      async function DownloadButtonClicked() {
-        const apiKey = document.getElementById("api-key").value;
-        const appID = document.getElementById("app-id").textContent;
-        const port = document.getElementById("port").textContent;
-        const assetID = document.getElementById("asset-id").value;
-        const assetBaseID = document.getElementById("asset-base-id").value;
-        const resolution = document.getElementById("resolution").value;
-    
-        if (!apiKey || !appID || !assetID || !assetBaseID || !resolution || !port) {
-          alert("Please fill all required fields.");
-          return;
+        const count = softwares.length;
+        $infoSw.textContent = count;
+        $swCount.textContent = `(${count})`;
+
+        if (count === 0) {
+          $swGrid.innerHTML = '<div class="empty-msg">No softwares detected. Start a software with the add-on enabled.</div>';
+        } else {
+          $swGrid.innerHTML = softwares.map(sw => `
+            <div class="card">
+              <dl>
+                <dt>Name</dt><dd>${escapeHtml(sw.name)}</dd>
+                <dt>Version</dt><dd>${escapeHtml(sw.version)}</dd>
+                <dt>PID (appID)</dt><dd>${sw.appID}</dd>
+                <dt>Add-on Version</dt><dd>${escapeHtml(sw.addonVersion)}</dd>
+                <dt>Project</dt><dd>${escapeHtml(sw.projectName || '(none)')}</dd>
+                <dt>Client Port</dt><dd>${sw._clientPort}</dd>
+              </dl>
+              <button class="json-toggle" onclick="this.nextElementSibling.classList.toggle('open')">raw json</button>
+              <div class="json-block">${escapeHtml(JSON.stringify(sw, null, 2))}</div>
+            </div>
+          `).join('');
         }
-    
-        let ok = await bkclientjs.downloadAssetToSoftware(port, appID, assetID, assetBaseID, resolution, apiKey, );
-        console.log("Download ok:", ok)
+
+        $swJson.textContent = JSON.stringify(softwares, null, 2);
       }
 
-      document.getElementById("download").addEventListener("click", DownloadButtonClicked)
-    
-      // Start polling and updating the clients and software lists periodically
-      window.onload = function() {
-        bkclientjs.startClientPolling();
-        populateClientList(); // Initial population
-        setInterval(populateClientList, pollingInterval); // Periodic update of the clientList
-      };
+      // --- Software dropdown for download ---
+      let dropdownFocused = false;
+      $software.addEventListener('focus', () => { dropdownFocused = true; });
+      $software.addEventListener('blur',  () => { dropdownFocused = false; });
+
+      function renderSoftwareDropdown() {
+        if (dropdownFocused) return;
+        const prev = $software.value;
+        $software.innerHTML = '<option value="" disabled selected>Select software</option>';
+        for (const c of latestClients) {
+          for (const sw of c.softwares) {
+            const opt = document.createElement('option');
+            opt.value = JSON.stringify({ port: c.port, appID: sw.appID });
+            opt.textContent = `${sw.name} v${sw.version} - ${sw.projectName || 'no project'} (port ${c.port})`;
+            $software.appendChild(opt);
+          }
+        }
+        if (prev) $software.value = prev;
+      }
+
+      // --- JSON toggles for section-level ---
+      document.getElementById('btn-clients-json').addEventListener('click', () => {
+        $clientsJson.classList.toggle('open');
+      });
+      document.getElementById('btn-sw-json').addEventListener('click', () => {
+        $swJson.classList.toggle('open');
+      });
+
+      // --- Download ---
+      document.getElementById('btn-download').addEventListener('click', async () => {
+        const swVal = $software.value;
+        if (!swVal) { $dlStatus.textContent = 'Select a software first'; $dlStatus.className = 'fail'; return; }
+        const { port, appID } = JSON.parse(swVal);
+        const apiKey      = document.getElementById('f-api-key').value;
+        const assetID     = document.getElementById('f-asset-id').value;
+        const assetBaseID = document.getElementById('f-asset-base-id').value;
+        const resolution  = document.getElementById('f-resolution').value;
+
+        if (!apiKey || !assetID || !assetBaseID || !resolution) {
+          $dlStatus.textContent = 'Fill all fields'; $dlStatus.className = 'fail'; return;
+        }
+
+        $dlStatus.textContent = 'sending...'; $dlStatus.className = '';
+        const ok = await bkclientjs.downloadAssetToSoftware(port, appID, assetID, assetBaseID, resolution, apiKey);
+        $dlStatus.textContent = ok ? 'OK - download scheduled' : 'FAILED';
+        $dlStatus.className = ok ? 'ok' : 'fail';
+      });
+
+      // --- Scan Now ---
+      document.getElementById('btn-scan').addEventListener('click', async () => {
+        console.log('Manual scan triggered');
+        const clients = await timedScan(2);
+        renderClients(clients);
+      });
+
+      // --- Start polling manually so we can measure scan time ---
+      renderClients([]); // initial empty render
+      async function poll() {
+        const clients = await timedScan(POLL_VERBOSITY);
+        renderClients(clients);
+      }
+      poll(); // immediate first scan
+      setInterval(poll, POLL_INTERVAL);
     </script>
 
   </body>
