@@ -10,7 +10,7 @@ export default bkclientjs;
 
 /** As defined in CLIENT_PORTS in https://github.com/BlenderKit/BlenderKit/blob/main/global_vars.py */
 let CLIENT_PORTS = ["62485", "65425", "55428", "49452", "35452", "25152", "5152", "1234"];
-let pollingInterval: ReturnType<typeof setInterval> | undefined; 
+let pollingInterval: ReturnType<typeof setInterval> | undefined;
 let connectedClients: ClientStatus[];
 /** Lock to prevent overlapping polling cycles. */
 let _pollingBusy = false;
@@ -104,7 +104,7 @@ async function _tryClientStatus(url: string, verbosity: Verbosity = 0): Promise<
  * @param assetBaseID - which asset to download TODO: remove this or assetBaseID and require just one
  * @param resolution - resolution of the asset - user should probably select this in the gallery
  * @param apiKey - apiKey of the logged user on the webpage - no need to sync the keys between several softwares
- * @param appID - Process ID of the running software to which we will download - list of all softwares is part of the 
+ * @param appID - Process ID of the running software to which we will download - list of all softwares is part of the
  * @returns true if download was successfully scheduled, otherwise false.
  */
 async function downloadAssetToSoftware (clientPort: string, appID: number, assetID: string, assetBaseID: string, resolution: string, apiKey: string): Promise<boolean> {
@@ -165,10 +165,10 @@ function getSoftwares(): Software[] {
 
 
 /** Start periodic polling/search on localhost for available Clients (and Softwares connected to them).
- * 
+ *
  * @param {number} [interval=5000] how often the bkclientjs should check for the running Clients and Softwares
  * @param {boolean} [verbosity=0] true it will print debug info about the request to Client
- * @returns 
+ * @returns
  */
 async function startClientPolling(
     interval: number = 5000,
@@ -226,5 +226,5 @@ function stopClientPolling() {
     }
     clearInterval(pollingInterval);
     pollingInterval = undefined;
-    console.log("Polling stopped.");    
+    console.log("Polling stopped.");
 }
