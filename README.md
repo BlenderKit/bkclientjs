@@ -57,6 +57,8 @@ If you want to get the Clients on demand right now:
 
 ```javascript
 let client = await bkclientjs.getClientsNow();
+// custom discovery timeout of 333 ms:
+// let client = await bkclientjs.getClientsNow(0, 333);
 if (client.length === 0) {
   return;
 }
@@ -90,6 +92,15 @@ const ok = bkclientjs.downloadAssetToSoftware(
   resolution,
   apiKey,
 );
+```
+
+You can also pass an options object as the third argument to configure the callback and/or discovery timeout:
+
+```javascript
+bkclientjs.startClientPolling(1000, 0, {
+  onUpdate: (clients) => { /* called after each poll */ },
+  timeoutMs: 333, // per-request discovery timeout in ms
+});
 ```
 
 ### Verbosity

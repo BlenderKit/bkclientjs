@@ -9,9 +9,10 @@ const bkclientjs = {
 export default bkclientjs;
 
 /** As defined in CLIENT_PORTS in https://github.com/BlenderKit/BlenderKit/blob/main/global_vars.py */
-let CLIENT_PORTS = ["62485", "65425", "55428", "49452", "35452", "25152", "5152", "1234"];
+const CLIENT_PORTS = ["62485", "65425", "55428", "49452", "35452", "25152", "5152", "1234"];
+const DISCOVERY_TIMEOUT_MS = 250;
 let pollingInterval: ReturnType<typeof setInterval> | undefined;
-let connectedClients: ClientStatus[];
+let connectedClients: ClientStatus[] = [];
 /** Lock to prevent overlapping polling cycles. */
 let _pollingBusy = false;
 type UpdateCallback = (clients: ClientStatus[]) => void | Promise<void>;
@@ -51,44 +52,76 @@ interface Software {
  */
 type Verbosity = 0 | 1 | 2;
 
+function normalizeDiscoveryTimeoutMs(timeoutMs: number): number {
+    if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+        return DISCOVERY_TIMEOUT_MS;
+    }
+    return timeoutMs;
+}
+
 /** Scan for the Clients right now. Make requests iterating over all possible ports Client can have on the localhost
  * and get their ClientStatuses if possible. Use the statuses to update UI and inform user where they can download the asset from browser gallery.
  * @param verbosity
- * @returns first successful response from local Client or null if something went wrong.
+ * @param timeoutMs timeout for each discovery request in milliseconds
+ * @returns discovered local Clients or empty array if none responded.
  */
-async function getClientsNow(verbosity: Verbosity = 0): Promise<ClientStatus[]> {
-    let statuses: ClientStatus[] = []
-    for (const port of CLIENT_PORTS) {
+async function getClientsNow(
+    verbosity: Verbosity = 0,
+    timeoutMs: number = DISCOVERY_TIMEOUT_MS
+): Promise<ClientStatus[]> {
+    const effectiveTimeoutMs = normalizeDiscoveryTimeoutMs(timeoutMs);
+    const statuses = await Promise.all(CLIENT_PORTS.map(async (port) => {
         /** Defined in bkclientjsStatusHandler in https://github.com/BlenderKit/BlenderKit/blob/main/client/main.go. */
         const url: string = `http://localhost:${port}/bkclientjs/status`;
-        let clientStatus = await _tryClientStatus(url, verbosity)
+        let clientStatus = await _tryClientStatus(url, verbosity, effectiveTimeoutMs)
         if (clientStatus === null) {
-            continue
+            return null;
         }
         clientStatus.port = port;
-        statuses.push(clientStatus);
-    }
-    return statuses;
+        return clientStatus;
+    }));
+    return statuses.filter((status): status is ClientStatus => status !== null);
 }
 
 /** Try to get the ClientStatus on selected address. This can fail as we are not sure if Client is available there.
  * Returns the status if Client runs on the URL, or null if the request has failed or response is not OK (could be another software running there).
  * @param url Address where to check if Client replies
+ * @param timeoutMs Timeout for a single discovery request in milliseconds
  * @returns response of the Client or null if something went wrong
  */
-async function _tryClientStatus(url: string, verbosity: Verbosity = 0): Promise<ClientStatus|null> {
+async function _tryClientStatus(
+    url: string,
+    verbosity: Verbosity = 0,
+    timeoutMs: number = DISCOVERY_TIMEOUT_MS
+): Promise<ClientStatus|null> {
     let clientStatus: ClientStatus
+    let controller: AbortController | undefined;
+    let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+    if (typeof AbortController === "function") {
+        controller = new AbortController();
+        timeoutHandle = setTimeout(() => controller?.abort(), timeoutMs);
+    } else if (verbosity > 1) {
+        console.debug("AbortController not available, discovery timeout disabled for:", url);
+    }
     try {
-        const resp = await fetch(url);
+        const resp = await fetch(url, controller ? { signal: controller.signal } : undefined);
         if (resp.status !== 200) {
             if (verbosity > 0) console.log(`Wrong status code: ${resp.status}`);
             return null;
         }
-        console.log("Client response:", resp)
+        if (verbosity > 1) console.log("Client response:", resp);
         clientStatus = await resp.json() as ClientStatus;
     } catch (err) {
+        if (err instanceof Error && err.name === "AbortError") {
+            if (verbosity > 1) console.debug(`Discovery timeout (${timeoutMs}ms): ${url}`);
+            return null;
+        }
         if (verbosity > 1) console.error("Error getting response:", err);
         return null;
+    } finally {
+        if (timeoutHandle !== undefined) {
+            clearTimeout(timeoutHandle);
+        }
     }
 
     if (clientStatus.softwares === null) {
@@ -164,17 +197,29 @@ function getSoftwares(): Software[] {
 // MARK: POLLING
 
 
+interface PollingOptions {
+    onUpdate?: UpdateCallback;
+    timeoutMs?: number;
+}
+
 /** Start periodic polling/search on localhost for available Clients (and Softwares connected to them).
  *
  * @param {number} [interval=5000] how often the bkclientjs should check for the running Clients and Softwares
- * @param {boolean} [verbosity=0] true it will print debug info about the request to Client
- * @returns
+ * @param {number} [verbosity=0] how verbose the logging should be (0=fatal, 1=info, 2=debug)
+ * @param {UpdateCallback | PollingOptions} [onUpdateOrOptions] options object, or a bare UpdateCallback for backward compat
  */
 async function startClientPolling(
     interval: number = 5000,
     verbosity: Verbosity = 0,
-    onUpdate?: UpdateCallback
+    onUpdateOrOptions?: UpdateCallback | PollingOptions,
 ): Promise<void> {
+    const onUpdate = typeof onUpdateOrOptions === 'function'
+        ? onUpdateOrOptions
+        : onUpdateOrOptions?.onUpdate;
+    const timeoutMs = typeof onUpdateOrOptions === 'object'
+        ? (onUpdateOrOptions?.timeoutMs ?? DISCOVERY_TIMEOUT_MS)
+        : DISCOVERY_TIMEOUT_MS;
+
     if (pollingInterval) {
         console.log("Polling is already running");
         return;
@@ -182,8 +227,8 @@ async function startClientPolling(
 
     try { // Start polling right away
         _pollingBusy = true;
-        connectedClients = await getClientsNow(verbosity);
-        console.log("Updated clients:", connectedClients);
+        connectedClients = await getClientsNow(verbosity, timeoutMs);
+        if (verbosity > 0) console.log("Updated clients:", connectedClients);
     } catch (error) {
         if (verbosity > 0) console.error("Error while fetching clients (immediate):", error);
     } finally {
@@ -206,7 +251,7 @@ async function startClientPolling(
 
         _pollingBusy = true;
         try {
-            connectedClients = await getClientsNow(verbosity);
+            connectedClients = await getClientsNow(verbosity, timeoutMs);
             if (verbosity > 0) console.log("Updated clients:", connectedClients);
             if (onUpdate) await onUpdate(connectedClients); // <- runs AFTER cycle finishes
         } catch (error) {
